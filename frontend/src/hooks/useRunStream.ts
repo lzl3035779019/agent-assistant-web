@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import type { RunEvent } from "../api/types";
-import { getAccessToken } from "../api/client";
+import { buildApiUrl, getAccessToken } from "../api/client";
 
 export function useRunStream(runId: string | null) {
   const queryClient = useQueryClient();
@@ -18,7 +18,7 @@ export function useRunStream(runId: string | null) {
 
     const accessToken = getAccessToken();
     const query = accessToken ? `?access_token=${encodeURIComponent(accessToken)}` : "";
-    const stream = new EventSource(`/api/v1/runs/${runId}/events${query}`);
+    const stream = new EventSource(buildApiUrl(`/runs/${runId}/events${query}`));
     stream.onopen = () => setConnected(true);
     stream.onerror = () => setConnected(false);
 

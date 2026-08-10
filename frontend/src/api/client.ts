@@ -41,8 +41,14 @@ import type {
 } from "./types";
 
 const API_PREFIX = "/api/v1";
+const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
 const ACCESS_TOKEN_KEY = "pmaa.access_token";
 const REFRESH_TOKEN_KEY = "pmaa.refresh_token";
+
+export function buildApiUrl(path: string) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${API_ORIGIN}${API_PREFIX}${normalizedPath}`;
+}
 
 export function getAccessToken() {
   return window.localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -66,7 +72,7 @@ async function refreshAccessToken() {
   const refreshToken = window.localStorage.getItem(REFRESH_TOKEN_KEY);
   if (!refreshToken) return false;
   if (!refreshPromise) {
-    refreshPromise = fetch(`${API_PREFIX}/auth/refresh`, {
+    refreshPromise = fetch(buildApiUrl("/auth/refresh"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: refreshToken }),
@@ -91,7 +97,7 @@ async function request<T>(path: string, init?: RequestInit, allowRefresh = true)
   }
   const accessToken = getAccessToken();
   if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
-  const response = await fetch(`${API_PREFIX}${path}`, { ...init, headers });
+  const response = await fetch(buildApiUrl(path), { ...init, headers });
   if (response.status === 401 && allowRefresh && await refreshAccessToken()) {
     return request<T>(path, init, false);
   }
