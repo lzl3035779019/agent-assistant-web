@@ -35,8 +35,8 @@ export function AuthPage({ onAuthenticated }: Props) {
     <main className="auth-shell">
       <section className="auth-intro">
         <span className="auth-kicker"><Network size={15} /> PERSONAL MULTI-AGENT ASSISTANT</span>
-        <h1>一个账号，一套隔离的 Agent 工作空间</h1>
-        <p>对话、长期记忆、知识文档、邮件动作和后台任务均按用户隔离。</p>
+        <h1>你的个人多智能体工作空间</h1>
+        <p>让专业 Agent 协同处理研究、记忆、邮件、日程、简报与信息监控。</p>
         <div className="auth-capabilities">
           <span>Supervisor DAG</span><span>Agentic RAG</span><span>Human-in-the-loop</span>
         </div>
@@ -48,7 +48,10 @@ export function AuthPage({ onAuthenticated }: Props) {
         </div>
         <div className="auth-heading">
           {mode === "login" ? <LockKeyhole size={20} /> : <UserRoundPlus size={20} />}
-          <div><h2>{mode === "login" ? "返回工作空间" : "创建个人工作空间"}</h2><p>JWT 访问令牌与可轮换刷新令牌</p></div>
+          <div>
+            <h2>{mode === "login" ? "欢迎回来" : "创建你的工作空间"}</h2>
+            <p>{mode === "login" ? "登录后继续处理你的任务" : "注册后即可开始使用多 Agent 助手"}</p>
+          </div>
         </div>
         <form onSubmit={submit}>
           {mode === "register" ? <label>显示名称<input autoComplete="name" onChange={(event) => setDisplayName(event.target.value)} placeholder="例如：小林" value={displayName} /></label> : null}
