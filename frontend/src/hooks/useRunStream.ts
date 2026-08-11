@@ -16,48 +16,81 @@ export function useRunStream(runId: string | null) {
       return;
     }
 
+    const controller = new AbortController();
     const accessToken = getAccessToken();
-    const query = accessToken ? `?access_token=${encodeURIComponent(accessToken)}` : "";
-    const stream = new EventSource(buildApiUrl(`/runs/${runId}/events${query}`));
-    stream.onopen = () => setConnected(true);
-    stream.onerror = () => setConnected(false);
+    const streamUrl = buildApiUrl(`/runs/${runId}/events`);
 
-    const eventNames = [
-      "run_started",
-      "supervisor_decision",
-      "agent_started",
-      "agent_progress",
-      "agent_completed",
-      "run_completed",
-      "run_failed",
-      "run_cancelled",
-      "agent_message",
-      "agent_retry",
-    ];
-    const listeners = new Map<string, EventListener>();
-    for (const eventName of eventNames) {
-      const listener: EventListener = (rawEvent) => {
-        const message = rawEvent as MessageEvent<string>;
-        const event = JSON.parse(message.data) as RunEvent;
-        setEvents((current) => {
-          if (current.some((item) => item.id === event.id)) return current;
-          return [...current, event].sort((a, b) => a.sequence - b.sequence);
+    const consumeStream = async () => {
+      const headers = new Headers({ Accept: "text/event-stream" });
+      if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+      if (/\.ngrok-free\.(app|dev)(?:\/|$)/i.test(streamUrl)) {
+        headers.set("ngrok-skip-browser-warning", "1");
+      }
+
+      try {
+        const response = await fetch(streamUrl, {
+          headers,
+          signal: controller.signal,
         });
-        if (["run_completed", "run_failed", "run_cancelled"].includes(event.event_type)) {
-          void queryClient.invalidateQueries({ queryKey: ["run", runId] });
-          stream.close();
-          setConnected(false);
+        if (!response.ok || !response.body) {
+          throw new Error(`SSE connection failed: ${response.status}`);
         }
-      };
-      listeners.set(eventName, listener);
-      stream.addEventListener(eventName, listener);
-    }
+        setConnected(true);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        const consumeFrame = (frame: string) => {
+          const data = frame
+            .split("\n")
+            .filter((line) => line.startsWith("data:"))
+            .map((line) => line.slice(5).trimStart())
+            .join("\n");
+          if (!data) return;
+
+          try {
+            const event = JSON.parse(data) as RunEvent;
+            setEvents((current) => {
+              if (current.some((item) => item.id === event.id)) return current;
+              return [...current, event].sort((a, b) => a.sequence - b.sequence);
+            });
+            if (["run_completed", "run_failed", "run_cancelled"].includes(event.event_type)) {
+              void queryClient.invalidateQueries({ queryKey: ["run", runId] });
+              setConnected(false);
+            }
+          } catch {
+            // Ignore malformed frames and continue consuming later events.
+          }
+        };
+
+        while (!controller.signal.aborted) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          buffer = buffer.replace(/\r\n/g, "\n");
+          let boundary = buffer.indexOf("\n\n");
+          while (boundary >= 0) {
+            consumeFrame(buffer.slice(0, boundary));
+            buffer = buffer.slice(boundary + 2);
+            boundary = buffer.indexOf("\n\n");
+          }
+        }
+        buffer += decoder.decode();
+        if (buffer.trim()) consumeFrame(buffer);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error("Run event stream disconnected", error);
+        }
+      } finally {
+        setConnected(false);
+      }
+    };
+
+    void consumeStream();
 
     return () => {
-      for (const [eventName, listener] of listeners) {
-        stream.removeEventListener(eventName, listener);
-      }
-      stream.close();
+      controller.abort();
       setConnected(false);
     };
   }, [queryClient, runId]);

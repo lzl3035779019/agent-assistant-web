@@ -42,6 +42,7 @@ import type {
 
 const API_PREFIX = "/api/v1";
 const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
+const USES_NGROK_FREE = /\.ngrok-free\.(app|dev)(?:\/|$)/i.test(API_ORIGIN);
 const ACCESS_TOKEN_KEY = "pmaa.access_token";
 const REFRESH_TOKEN_KEY = "pmaa.refresh_token";
 
@@ -92,6 +93,7 @@ async function refreshAccessToken() {
 
 async function request<T>(path: string, init?: RequestInit, allowRefresh = true): Promise<T> {
   const headers = new Headers(init?.headers);
+  if (USES_NGROK_FREE) headers.set("ngrok-skip-browser-warning", "1");
   if (init?.body && !(init.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
