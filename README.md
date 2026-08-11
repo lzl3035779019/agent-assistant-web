@@ -1,6 +1,10 @@
 # PMAA Web
 
-PMAA Web 是个人多智能体助手的前后端重构版，与原 Streamlit 项目完全独立。项目采用 React 工作台、FastAPI API、后台任务队列和 LangGraph Agent Runtime，目标是形成可部署、可观测、可扩展的生产化系统。
+PMAA Web 是一个面向复杂任务处理的生产级个人多智能体助手。系统基于 Supervisor 层级架构与 LangGraph Agent Runtime，协同 Web Research、Memory、Email、Calendar、Daily Brief、Information Monitor 等专业 Agent，并通过 React、FastAPI、PostgreSQL、Redis、Qdrant 与 SSE 事件流构建可持久化、可观测、可扩展的任务执行闭环。
+
+## 界面预览
+
+![PMAA 多智能体任务工作台](docs/images/pmaa-workspace.png)
 
 ## 已实现能力
 
