@@ -34,6 +34,7 @@ import type {
   MonitorRuleUpdate,
   MonitorStats,
   RunCreate,
+  RunEvent,
   RunPage,
   RunStatus,
   TodoItem,
@@ -167,6 +168,9 @@ export const api = {
   },
   getRun(runId: string) {
     return request<AgentRun>(`/runs/${runId}`);
+  },
+  listRunEvents(runId: string) {
+    return request<RunEvent[]>(`/runs/${runId}/events/history`);
   },
   cancelRun(runId: string) {
     return request<AgentRun>(`/runs/${runId}/cancel`, { method: "POST" });

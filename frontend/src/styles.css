@@ -88,10 +88,17 @@ button { letter-spacing: 0; }
 .conversation-loading { padding: 18px 42px; color: var(--muted); font-size: 11px; }
 .result-line { align-items: stretch; }
 .agent-output { min-width: 0; flex: 1; border: 1px solid var(--line); border-radius: 7px; background: #fff; overflow: hidden; }
-.trace-header { height: 43px; padding: 0 14px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; background: #f7f8f9; }
+.trace-details { min-width: 0; }
+.trace-header { height: 43px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; background: #f7f8f9; list-style: none; cursor: pointer; user-select: none; }
+.trace-header::-webkit-details-marker { display: none; }
+.trace-header:hover { background: #f1f3f4; }
+.trace-details[open] .trace-header { border-bottom: 1px solid var(--line); }
 .trace-header > span { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
 .trace-header small { color: var(--muted); font-size: 10px; }
 .trace-header small.connected { color: var(--teal); }
+.trace-chevron { color: #7b858c; transition: transform 160ms ease; }
+.trace-details[open] .trace-chevron { transform: rotate(180deg); }
+.trace-loading { padding: 18px 15px; color: var(--muted); font-size: 11px; }
 .timeline { padding: 14px; display: grid; gap: 11px; }
 .timeline-row { position: relative; min-height: 35px; display: flex; align-items: flex-start; gap: 10px; }
 .timeline-row:not(:last-child)::before { content: ""; position: absolute; left: 11px; top: 24px; bottom: -12px; width: 1px; background: #dfe3e5; }

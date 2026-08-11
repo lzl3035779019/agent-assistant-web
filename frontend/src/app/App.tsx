@@ -20,6 +20,7 @@ import { AuthPage } from "../components/AuthPage";
 import { DailyBriefPage } from "../components/DailyBriefPage";
 import { KnowledgePage } from "../components/KnowledgePage";
 import { EmailPage } from "../components/EmailPage";
+import { HistoricalRunMessage } from "../components/HistoricalRunMessage";
 import { MemoryPage } from "../components/MemoryPage";
 import { MonitorPage } from "../components/MonitorPage";
 import { RunTimeline } from "../components/RunTimeline";
@@ -67,6 +68,7 @@ function Workspace({ authEnabled, onLogout }: WorkspaceProps) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [expandedEvidence, setExpandedEvidence] = useState<string | null>(null);
   const [runId, setRunId] = useState<string | null>(null);
+  const [currentTraceOpen, setCurrentTraceOpen] = useState(true);
 
   const conversationsQuery = useQuery({
     queryKey: ["conversations"],
@@ -112,6 +114,10 @@ function Workspace({ authEnabled, onLogout }: WorkspaceProps) {
     void queryClient.invalidateQueries({ queryKey: ["conversation", conversationId] });
     void queryClient.invalidateQueries({ queryKey: ["conversations"] });
   }, [conversationId, queryClient, runQuery.data?.status]);
+
+  useEffect(() => {
+    setCurrentTraceOpen(true);
+  }, [runId]);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -181,12 +187,7 @@ function Workspace({ authEnabled, onLogout }: WorkspaceProps) {
                       <div className="message user-message">{message.content}</div>
                       <div className="avatar user-avatar">U</div>
                     </div>
-                  ) : (
-                    <div className="assistant-line" key={message.id}>
-                      <div className="avatar assistant-avatar">A</div>
-                      <div className="message assistant-message history-answer">{message.content}</div>
-                    </div>
-                  ))}
+                  ) : <HistoricalRunMessage key={message.id} message={message} />)}
                 {runQuery.data ? (
                   <>
                     {!messages.some((message) => message.role === "user" && message.run_id === runQuery.data.id) ? (
@@ -198,11 +199,17 @@ function Workspace({ authEnabled, onLogout }: WorkspaceProps) {
                     <div className="assistant-line result-line">
                       <div className="avatar assistant-avatar">A</div>
                       <div className="agent-output">
-                        <div className="trace-header">
-                          <span><Network size={16} />Agent 执行过程</span>
-                          <small className={connected ? "connected" : ""}>{connected ? "实时连接" : runQuery.data.status}</small>
-                        </div>
-                        <RunTimeline events={events} running={running} />
+                        <details
+                          className="trace-details"
+                          onToggle={(event) => setCurrentTraceOpen(event.currentTarget.open)}
+                          open={currentTraceOpen}
+                        >
+                          <summary className="trace-header">
+                            <span><Network size={16} />Agent 执行过程 <ChevronDown className="trace-chevron" size={15} /></span>
+                            <small className={connected ? "connected" : ""}>{connected ? "实时连接" : runQuery.data.status}</small>
+                          </summary>
+                          <RunTimeline events={events} running={running} />
+                        </details>
                         {runQuery.data.status === "completed" ? (
                           <div className="answer-block">
                             <div className="answer-title"><CheckCircle2 size={17} />运行结果</div>
